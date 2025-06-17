@@ -35,3 +35,20 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# Test files
+test-parser.js
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Database
+*.db
+*.db-*
+
+# Temporary files
+/tmp/
