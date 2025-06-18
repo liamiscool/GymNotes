@@ -10,29 +10,52 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
 import { useTheme } from '../contexts/ThemeContext';
 import { WorkoutSession, RootStackParamList } from '../types';
 import { database } from '../services/database';
 
-type WorkoutsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Main'>;
+type WorkoutsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Workouts'>;
+type WorkoutsScreenRouteProp = RouteProp<RootStackParamList, 'Workouts'>;
 
 export default function WorkoutsScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation<WorkoutsScreenNavigationProp>();
+  const route = useRoute<WorkoutsScreenRouteProp>();
+  const { planId, planName } = route.params;
   const [workouts, setWorkouts] = useState<WorkoutSession[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadWorkouts();
-  }, []);
+  // Set up header with profile button
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          style={styles.profileButton}
+          onPress={() => navigation.navigate('Profile')}
+        >
+          <Ionicons 
+            name="person-circle-outline" 
+            size={28} 
+            color={theme.colors.primary} 
+          />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, theme]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadWorkouts();
+    }, [planId])
+  );
 
   const loadWorkouts = async () => {
     try {
       await database.initialize();
-      const sessions = await database.getWorkoutSessions();
+      const sessions = await database.getWorkoutSessions(planId);
       setWorkouts(sessions);
     } catch (error) {
       console.error('Error loading workouts:', error);
@@ -67,7 +90,7 @@ export default function WorkoutsScreen() {
   const renderWorkoutItem = ({ item }: { item: WorkoutSession }) => (
     <TouchableOpacity 
       style={[styles.workoutItem, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}
-      onPress={() => navigation.navigate('WorkoutInput', { sessionId: item.id })}
+      onPress={() => navigation.navigate('WorkoutInput', { sessionId: item.id, planId })}
     >
       <View style={styles.workoutHeader}>
         <View style={styles.workoutTitleContainer}>
@@ -115,10 +138,10 @@ export default function WorkoutsScreen() {
         color={theme.colors.textSecondary} 
       />
       <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
-        No workouts yet
+        No workouts in {planName}
       </Text>
       <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
-        Tap the + button to start your first workout
+        Tap the + button to start your first workout in this plan
       </Text>
     </View>
   );
@@ -126,12 +149,9 @@ export default function WorkoutsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          GymNotes
-        </Text>
         <TouchableOpacity 
           style={styles.addButton}
-          onPress={() => navigation.navigate('WorkoutInput', {})}
+          onPress={() => navigation.navigate('WorkoutInput', { planId })}
         >
           <Ionicons name="add" size={24} color={theme.colors.primary} />
         </TouchableOpacity>
@@ -162,19 +182,17 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 8,
     paddingBottom: 16,
-  },
-  title: {
-    fontSize: 34,
-    fontWeight: '700',
-    letterSpacing: 0.4,
   },
   addButton: {
     padding: 8,
+  },
+  profileButton: {
+    padding: 8,
+    marginRight: 4,
   },
   listContainer: {
     paddingBottom: 20,

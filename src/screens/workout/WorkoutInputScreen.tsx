@@ -27,7 +27,7 @@ export default function WorkoutInputScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation();
   const route = useRoute<WorkoutInputRouteProp>();
-  const { sessionId } = route.params;
+  const { sessionId, planId } = route.params || {};
 
   const [input, setInput] = useState('');
   const [sets, setSets] = useState<WorkoutSet[]>([]);
@@ -77,7 +77,7 @@ export default function WorkoutInputScreen() {
       
       if (sessionId) {
         // Load existing session
-        const sessions = await database.getWorkoutSessions(100);
+        const sessions = await database.getWorkoutSessions(undefined, 100);
         const existingSession = sessions.find(s => s.id === sessionId);
         if (existingSession) {
           setSession(existingSession);
@@ -87,6 +87,7 @@ export default function WorkoutInputScreen() {
         // Create new session
         const newSession: WorkoutSession = {
           id: Date.now().toString(),
+          planId: planId || 'default',
           date: new Date(),
           sets: [],
           isCompleted: false,
@@ -112,9 +113,12 @@ export default function WorkoutInputScreen() {
       const parsed = WorkoutParser.parseInput(input.trim());
       
       if (!parsed) {
+        const suggestions = WorkoutParser.generateParsingSuggestions(input.trim());
         Alert.alert(
           'Invalid Format',
-          'Try formats like:\n• "3x10 bench press @60kg"\n• "squat 100x5 rpe 8"\n• "deadlift 3x5 @100kg felt easy"'
+          suggestions.length > 0 
+            ? suggestions.join('\n• ')
+            : 'Try formats like:\n• "3x10 bench press @60kg"\n• "squat 100x5 rpe 8"\n• "deadlift 3x5 @100kg felt easy"'
         );
         setIsLoading(false);
         return;
@@ -144,14 +148,7 @@ export default function WorkoutInputScreen() {
   };
 
   const getExerciseEmoji = (exercise: string) => {
-    const exerciseLower = exercise.toLowerCase();
-    if (exerciseLower.includes('bench') || exerciseLower.includes('press')) return '🏋️‍♂️';
-    if (exerciseLower.includes('squat')) return '🦵';
-    if (exerciseLower.includes('deadlift')) return '💪';
-    if (exerciseLower.includes('pull')) return '🤲';
-    if (exerciseLower.includes('row')) return '🚣‍♂️';
-    if (exerciseLower.includes('curl')) return '💪';
-    return '🏃‍♂️';
+    return WorkoutParser.getExerciseEmoji(exercise);
   };
 
   const renderSetItem = ({ item, index }: { item: WorkoutSet; index: number }) => (

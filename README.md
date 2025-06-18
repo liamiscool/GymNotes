@@ -208,6 +208,39 @@ The app includes a smart workout parser that handles multiple input formats:
 - [ ] Social features
 - [ ] Premium features
 
+## 🎯 Issue Management & Kanban Workflow
+
+We use a streamlined issue management system with GitHub Projects for kanban-style workflow.
+
+### 📋 Creating Issues
+Use the `/issues` command in Claude Code to transform ideas into structured GitHub issues:
+
+```bash
+/issues "Add dark mode toggle in settings"
+```
+
+**Auto-generates:**
+- 🏷️ Proper labels and priority
+- 📝 Detailed description with acceptance criteria
+- 🎯 Technical implementation notes
+- 📋 Assignment to project kanban board
+
+### 📊 Kanban Board
+**Project:** [GymNotes Development](https://github.com/liamiscool/GymNotes/projects/2)
+
+```
+📋 Backlog → 🏗️ In Progress → 👀 Review → ✅ Done
+```
+
+### 🏷️ Issue Labels
+- `enhancement` 🚀 - New features
+- `bug` 🐛 - Bug fixes  
+- `improvement` ✨ - Enhancements
+- `task` 🧹 - Development tasks
+- `design` 🎨 - UI/UX improvements
+- `performance` ⚡ - Optimizations
+- `priority:high/medium/low` - Priority levels
+
 ## 🤝 Contributing
 
 We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
