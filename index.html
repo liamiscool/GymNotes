@@ -68,7 +68,7 @@
         <h1>Email Verified!</h1>
         <p>Your email has been successfully verified. You can now sign in to GymNotes and start tracking your workouts.</p>
         
-        <a href="exp://192.168.1.100:8081" class="app-button">Open GymNotes App</a>
+        <a href="#" class="app-button" onclick="openApp()">Open GymNotes App</a>
         
         <div class="note">
             <strong>Next Steps:</strong><br>
@@ -79,11 +79,31 @@
     </div>
 
     <script>
+        function openApp() {
+            // Try different app URL formats
+            const appUrls = [
+                'exp://192.168.1.100:8081',  // Development URL
+                'exp://192.168.1.100:8082',  // Alternative port
+                'gymnotes://',               // Custom scheme (for production)
+                'https://expo.dev/@your-username/gymnotes' // Expo Go URL
+            ];
+            
+            // Try each URL
+            for (const url of appUrls) {
+                try {
+                    window.location.href = url;
+                    break;
+                } catch (e) {
+                    continue;
+                }
+            }
+        }
+
         // Auto-redirect to app if on mobile
         const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         if (isMobile) {
             setTimeout(() => {
-                window.location.href = 'exp://192.168.1.100:8081';
+                openApp();
             }, 3000);
         }
     </script>
