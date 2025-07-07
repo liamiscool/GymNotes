@@ -62,7 +62,51 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
           onAuthSuccess();
         }
       } else {
-        Alert.alert('Error', result.error || 'Authentication failed');
+        // Better error handling
+        let errorMessage = result.error || 'Authentication failed';
+        let errorTitle = 'Error';
+        
+        if (errorMessage.includes('Invalid login credentials')) {
+          if (authMode === 'signin') {
+            errorTitle = 'Login Failed';
+            errorMessage = 'Incorrect email or password. Try signing up if you don\'t have an account yet.';
+            Alert.alert(
+              errorTitle, 
+              errorMessage,
+              [
+                { text: 'Try Again', style: 'cancel' },
+                { text: 'Sign Up Instead', onPress: () => setAuthMode('signup') }
+              ]
+            );
+            return;
+          } else {
+            errorTitle = 'Sign Up Failed';
+            errorMessage = 'This email might already be registered. Try signing in instead.';
+            Alert.alert(
+              errorTitle, 
+              errorMessage,
+              [
+                { text: 'Try Again', style: 'cancel' },
+                { text: 'Sign In Instead', onPress: () => setAuthMode('signin') }
+              ]
+            );
+            return;
+          }
+        } else if (errorMessage.includes('Email not confirmed')) {
+          errorTitle = 'Email Not Verified';
+          errorMessage = 'Please check your email and click the verification link before signing in.';
+        } else if (errorMessage.includes('User already registered')) {
+          errorTitle = 'Account Exists';
+          errorMessage = 'This email is already registered. Try signing in instead.';
+        } else if (errorMessage.includes('Invalid email')) {
+          errorTitle = 'Invalid Email';
+          errorMessage = 'Please enter a valid email address.';
+        } else if (errorMessage.includes('Password should be at least 6 characters')) {
+          errorTitle = 'Weak Password';
+          errorMessage = 'Password must be at least 6 characters long.';
+        }
+        
+        Alert.alert(errorTitle, errorMessage);
       }
     } catch (error) {
       console.error('Auth error:', error);
