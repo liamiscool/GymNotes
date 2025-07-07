@@ -19,13 +19,21 @@ interface AIParsingResponse {
 
 export class AIWorkoutParser {
   private static readonly OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-  private static readonly MODEL = 'anthropic/claude-3-haiku:beta';
+  private static readonly MODEL = 'meta-llama/llama-3.1-8b-instruct:free';
 
   static async parseWorkoutInput(input: string): Promise<AIParsingResponse> {
+    // First try regex parsing for common patterns
+    const regexResult = this.parseWithRegex(input);
+    if (regexResult.success) {
+      return regexResult;
+    }
+
+    // If regex fails, try AI parsing
     try {
-      const apiKey = process.env.OPENROUTER_API_KEY;
+      const apiKey = process.env.OPENROUTER_API_KEY || global.process?.env?.OPENROUTER_API_KEY;
       if (!apiKey) {
-        throw new Error('OpenRouter API key not found');
+        console.log('No API key found, using regex fallback');
+        return regexResult; // Return regex result even if it failed
       }
 
       const prompt = this.createParsingPrompt(input);
@@ -68,13 +76,79 @@ export class AIWorkoutParser {
 
       return this.parseAIResponse(aiResponse, input);
     } catch (error) {
-      console.error('AI parsing error:', error);
+      console.error('AI parsing error, falling back to regex:', error);
+      return regexResult; // Return regex result as fallback
+    }
+  }
+
+  // Simple regex-based parsing for common patterns
+  private static parseWithRegex(input: string): AIParsingResponse {
+    const inputLower = input.toLowerCase().trim();
+    
+    // Pattern 1: "3x10 bench press @60kg"
+    const pattern1 = /(\d+)x(\d+)\s+(.+?)\s*@?\s*(\d+(?:\.\d+)?)\s*(kg|lbs)?/i;
+    const match1 = inputLower.match(pattern1);
+    
+    if (match1) {
+      const [, sets, reps, exercise, weight, unit] = match1;
       return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        suggestions: this.generateFallbackSuggestions(input)
+        success: true,
+        data: {
+          exercise: this.normalizeExerciseName(exercise),
+          sets: parseInt(sets),
+          reps: parseInt(reps),
+          weight: parseFloat(weight),
+          unit: (unit as 'kg' | 'lbs') || 'kg',
+        }
       };
     }
+
+    // Pattern 2: "squat 100x5" or "100x5 squat"
+    const pattern2 = /(?:(\w+(?:\s+\w+)*)\s+(\d+(?:\.\d+)?)x(\d+))|(?:(\d+(?:\.\d+)?)x(\d+)\s+(\w+(?:\s+\w+)*))/i;
+    const match2 = inputLower.match(pattern2);
+    
+    if (match2) {
+      const [, exercise1, weight1, reps1, weight2, reps2, exercise2] = match2;
+      const exercise = exercise1 || exercise2;
+      const weight = parseFloat(weight1 || weight2);
+      const reps = parseInt(reps1 || reps2);
+      
+      return {
+        success: true,
+        data: {
+          exercise: this.normalizeExerciseName(exercise),
+          sets: 1,
+          reps: reps,
+          weight: weight,
+          unit: 'kg',
+        }
+      };
+    }
+
+    // Pattern 3: "exercise name 3 sets 5 reps 120kg"
+    const pattern3 = /(.+?)\s+(\d+)\s+sets?\s+(\d+)\s+reps?\s+(\d+(?:\.\d+)?)\s*(kg|lbs)?/i;
+    const match3 = inputLower.match(pattern3);
+    
+    if (match3) {
+      const [, exercise, sets, reps, weight, unit] = match3;
+      return {
+        success: true,
+        data: {
+          exercise: this.normalizeExerciseName(exercise),
+          sets: parseInt(sets),
+          reps: parseInt(reps),
+          weight: parseFloat(weight),
+          unit: (unit as 'kg' | 'lbs') || 'kg',
+        }
+      };
+    }
+
+    // If no pattern matches, return failure with suggestions
+    return {
+      success: false,
+      error: 'Could not parse workout input',
+      suggestions: this.generateFallbackSuggestions(input)
+    };
   }
 
   private static getSystemPrompt(): string {
