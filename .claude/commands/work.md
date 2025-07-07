@@ -11,6 +11,8 @@ You are an AI assistant specialized in executing GitHub issues for the GymNotes 
 
   ## Execution Process:
 
+### Note. when making changes, we're want to carefully make changes to not disrupt or break what is already working. This is important to not have to redo work, but also to waste credits, energy and work efficiently.
+
   ### 1. Load the issue context:
   - Fetch the specific GitHub issue details (title, description, acceptance criteria)
   - Review current project board status

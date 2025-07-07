@@ -17,8 +17,8 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 
 import { useTheme } from '../../contexts/ThemeContext';
 import { WorkoutSet, WorkoutSession, RootStackParamList } from '../../types';
-import { database } from '../../services/database';
-import { WorkoutParser } from '../../utils/workoutParser';
+import { SupabaseDatabaseService } from '../../services/supabaseDatabase';
+import { AIWorkoutParser } from '../../services/aiParser';
 import ManualWorkoutTable from '../../components/ManualWorkoutTable';
 
 type WorkoutInputRouteProp = RouteProp<RootStackParamList, 'WorkoutInput'>;
@@ -73,30 +73,31 @@ export default function WorkoutInputScreen() {
 
   const initializeSession = async () => {
     try {
-      await database.initialize();
+      await SupabaseDatabaseService.initialize();
       
       if (sessionId) {
         // Load existing session
-        const sessions = await database.getWorkoutSessions(undefined, 100);
-        const existingSession = sessions.find(s => s.id === sessionId);
+        const existingSession = await SupabaseDatabaseService.getWorkoutSession(sessionId);
         if (existingSession) {
           setSession(existingSession);
-          setSets(existingSession.sets);
+          // Load sets for this session
+          const sessionSets = await SupabaseDatabaseService.getWorkoutSets(sessionId);
+          setSets(sessionSets);
         }
       } else {
         // Create new session
-        const newSession: WorkoutSession = {
-          id: Date.now().toString(),
-          planId: planId || 'default',
-          date: new Date(),
-          sets: [],
-          isCompleted: false,
-          createdAt: new Date(),
-          updatedAt: new Date(),
+        const newSessionData = {
+          name: null,
+          notes: null,
+          date: new Date().toISOString().split('T')[0],
+          plan_id: planId || null,
+          is_completed: false,
         };
         
-        await database.createWorkoutSession(newSession);
-        setSession(newSession);
+        const newSession = await SupabaseDatabaseService.createWorkoutSession(newSessionData);
+        if (newSession) {
+          setSession(newSession);
+        }
       }
     } catch (error) {
       console.error('Error initializing session:', error);
@@ -110,34 +111,66 @@ export default function WorkoutInputScreen() {
     setIsLoading(true);
     
     try {
-      const parsed = WorkoutParser.parseInput(input.trim());
+      // Use AI to parse the workout input
+      const parseResult = await AIWorkoutParser.parseWorkoutInput(input.trim());
       
-      if (!parsed) {
-        const suggestions = WorkoutParser.generateParsingSuggestions(input.trim());
+      if (!parseResult.success || !parseResult.data) {
         Alert.alert(
-          'Invalid Format',
-          suggestions.length > 0 
-            ? suggestions.join('\n• ')
-            : 'Try formats like:\n• "3x10 bench press @60kg"\n• "squat 100x5 rpe 8"\n• "deadlift 3x5 @100kg felt easy"'
+          'Could not parse workout',
+          parseResult.error || 'Try a different format',
+          [
+            {
+              text: 'See suggestions',
+              onPress: () => {
+                if (parseResult.suggestions && parseResult.suggestions.length > 0) {
+                  Alert.alert(
+                    'Formatting suggestions',
+                    parseResult.suggestions.join('\n• ')
+                  );
+                }
+              }
+            },
+            { text: 'OK' }
+          ]
         );
         setIsLoading(false);
         return;
       }
 
-      const newSet: WorkoutSet = {
-        id: Date.now().toString(),
-        timestamp: new Date(),
-        ...WorkoutParser.createWorkoutSet(parsed),
+      // Validate the parsed data
+      const validation = AIWorkoutParser.validateWorkoutData(parseResult.data);
+      if (!validation.isValid) {
+        Alert.alert('Invalid workout data', validation.errors.join('\n'));
+        setIsLoading(false);
+        return;
+      }
+
+      // Create workout set for Supabase
+      const newSetData = {
+        session_id: session.id,
+        exercise_name: parseResult.data.exercise,
+        sets: parseResult.data.sets,
+        reps: parseResult.data.reps,
+        weight: parseResult.data.weight || null,
+        unit: parseResult.data.unit || 'kg',
+        rpe: parseResult.data.rpe || null,
+        notes: parseResult.data.notes || null,
+        order_index: sets.length,
       };
 
-      await database.addWorkoutSet(newSet, session.id);
-      setSets(prev => [...prev, newSet]);
-      setInput('');
+      const newSet = await SupabaseDatabaseService.addWorkoutSet(newSetData);
       
-      // Scroll to bottom
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      if (newSet) {
+        setSets(prev => [...prev, newSet]);
+        setInput('');
+        
+        // Scroll to bottom
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      } else {
+        Alert.alert('Error', 'Failed to save exercise');
+      }
       
     } catch (error) {
       console.error('Error adding set:', error);
@@ -148,18 +181,18 @@ export default function WorkoutInputScreen() {
   };
 
   const getExerciseEmoji = (exercise: string) => {
-    return WorkoutParser.getExerciseEmoji(exercise);
+    return AIWorkoutParser.getExerciseEmoji(exercise);
   };
 
-  const renderSetItem = ({ item, index }: { item: WorkoutSet; index: number }) => (
+  const renderSetItem = ({ item, index }: { item: any; index: number }) => (
     <View style={styles.setItem}>
       <View style={styles.exerciseHeader}>
         <View style={styles.exerciseTitleRow}>
           <Text style={[styles.exerciseName, { color: theme.colors.text }]}>
-            {getExerciseEmoji(item.exercise)} {item.exercise}
+            {getExerciseEmoji(item.exercise_name)} {item.exercise_name}
           </Text>
           <Text style={[styles.timestamp, { color: theme.colors.textSecondary }]}>
-            {item.timestamp.toLocaleTimeString('en-US', { 
+            {new Date(item.created_at).toLocaleTimeString('en-US', { 
               hour: 'numeric', 
               minute: '2-digit' 
             })}
@@ -176,7 +209,7 @@ export default function WorkoutInputScreen() {
           {item.weight && (
             <View style={[styles.weightTag, { backgroundColor: theme.colors.accent + '15' }]}>
               <Text style={[styles.weightTagText, { color: theme.colors.accent }]}>
-                {item.weight}kg
+                {item.weight}{item.unit}
               </Text>
             </View>
           )}
