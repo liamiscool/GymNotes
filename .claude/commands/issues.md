@@ -21,11 +21,52 @@ You are an AI assistant tasked with creating well-structured GitHub issues for f
   submitting issues
   - Understand the current architecture and components
 
-  ## 2. Research best practices:
-  - Search for current best practices in writing GitHub issues, focusing on clarity,
-  completeness, and actionability
-  - Look for examples of well-written issues in popular open-source projects for inspiration
-  - Consider the perspective of both maintainers and contributors
+  ## 2. Apply GitHub Issue Best Practices:
+  Use these established best practices for writing effective GitHub issues:
+
+  ### Essential Elements
+  - **Descriptive Titles**: Use concise, descriptive titles that summarize the issue clearly (e.g., "Bug: App crashes when clicking login button"). Use imperative mood and don't end with a period.
+  - **Detailed Description**: Provide context, including what you expected vs. what actually occurred. State goals clearly and be explicit about deliverables.
+  - **Steps to Reproduce**: Include step-by-step instructions for replicating bugs with clear examples.
+
+  ### Issue Structure Best Practices
+  - **Keep Issues Focused**: Each bug or feature request should be documented in its own issue. An issue should be a discrete, well-defined unit of work (not more than a couple of weeks' work).
+  - **Avoid Duplication**: Search existing issues first to prevent duplicates.
+  - **Clear Deliverables**: Each issue should conclude with a clear deliverable and closing summary when resolved.
+
+  ### Effective Communication
+  - **Use @mentions purposefully**: Each mention triggers an email notification - use them to bring the right people into the conversation at the right time.
+  - **Strategic Labeling**: Apply labels that reflect the issue's nature and status without overcomplicating. Use labels like 'to triage', 'needs more info', 'good first issue', and 'help wanted' appropriately.
+  - **Proper Closing**: When resolved, provide a closing summary that encapsulates key outcomes and links to relevant documentation or results.
+
+  ### Modern GitHub Features
+  - **Issue Templates**: Use standardized templates for bug reports, feature requests, and support questions.
+  - **Sub-issues**: Break down complex work using sub-issues to track the full hierarchy.
+  - **Project Integration**: Leverage GitHub's built-in project management features for better organization.
+
+  ### GymNotes Project-Specific Best Practices
+  Based on analysis of existing issues in this repository:
+
+  #### Structure and Formatting
+  - **Emoji Prefixes**: Use relevant emojis in titles (🔧 for enhancements, 🐛 for bugs, 📱 for UI, 🎯 for goals)
+  - **Comprehensive Sections**: Include Problem Statement, Current State, Proposed Solution, Technical Implementation, Acceptance Criteria
+  - **Code Examples**: Provide TypeScript interfaces and implementation snippets when relevant
+  - **File References**: List specific files to be modified with full paths (e.g., `src/services/aiParser.ts`)
+  - **Database Schema**: Include SQL schema changes when database modifications are needed
+
+  #### Technical Documentation
+  - **API Endpoints**: Document new endpoints with method and path
+  - **Component Interfaces**: Define TypeScript interfaces for new features
+  - **User Flow Documentation**: Include step-by-step user experience flows
+  - **Success Metrics**: Define measurable success criteria for features
+  - **Priority and Effort Estimation**: Include priority level and estimated effort (e.g., "Large (6-8 weeks)")
+
+  #### Content Organization
+  - **Logical Grouping**: Use clear section headers with appropriate hierarchy
+  - **Example-Rich**: Provide concrete examples of inputs, outputs, and user interactions
+  - **Future-Proof**: Include "Related Features" and "Technical Considerations" sections
+  - **Monetization Integration**: Consider how features relate to free vs pro functionality
+  - **Design References**: Reference similar features in other apps for design inspiration
 
   ## 3. Present a plan:
   - Based on your research, outline a plan for creating the GitHub issue

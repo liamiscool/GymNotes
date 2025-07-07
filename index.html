@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GymNotes - Email Verified</title>
+    <title>GymNotes - Simple Workout Tracking</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -18,94 +18,98 @@
         .container {
             background: white;
             border-radius: 20px;
-            padding: 40px;
-            max-width: 500px;
+            padding: 60px 40px;
+            max-width: 600px;
             text-align: center;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
         }
-        .icon {
-            font-size: 60px;
+        .logo {
+            font-size: 80px;
             margin-bottom: 20px;
         }
         h1 {
             color: #333;
             margin-bottom: 15px;
-            font-size: 28px;
+            font-size: 36px;
+            font-weight: 700;
         }
-        p {
+        .tagline {
             color: #666;
+            font-size: 20px;
             line-height: 1.6;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
         }
-        .app-button {
+        .features {
+            text-align: left;
+            margin: 40px 0;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+        .features h3 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .features ul {
+            list-style: none;
+            padding: 0;
+        }
+        .features li {
+            color: #666;
+            margin-bottom: 12px;
+            padding-left: 30px;
+            position: relative;
+        }
+        .features li:before {
+            content: "💪";
+            position: absolute;
+            left: 0;
+        }
+        .coming-soon {
             background: #667eea;
             color: white;
             padding: 15px 30px;
             border: none;
             border-radius: 12px;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 600;
-            text-decoration: none;
-            display: inline-block;
-            transition: background 0.3s;
-        }
-        .app-button:hover {
-            background: #5a6fd8;
+            margin-top: 20px;
+            opacity: 0.8;
         }
         .note {
             margin-top: 30px;
             padding: 20px;
-            background: #f8f9fa;
+            background: #e3f2fd;
             border-radius: 12px;
-            color: #666;
+            color: #1976d2;
             font-size: 14px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="icon">✅</div>
-        <h1>Email Verified!</h1>
-        <p>Your email has been successfully verified. You can now sign in to GymNotes and start tracking your workouts.</p>
+        <div class="logo">🏋️‍♂️</div>
+        <h1>GymNotes</h1>
+        <p class="tagline">Simple, fast workout tracking that feels like Apple Notes</p>
         
-        <a href="#" class="app-button" onclick="openApp()">Open GymNotes App</a>
+        <div class="features">
+            <h3>Why GymNotes?</h3>
+            <ul>
+                <li>Natural language input - just type "3x10 bench press @60kg"</li>
+                <li>Offline-first - as fast as Apple Notes</li>
+                <li>Clean, distraction-free interface</li>
+                <li>AI-powered workout parsing</li>
+                <li>iPhone-first design</li>
+            </ul>
+        </div>
+
+        <button class="coming-soon">Coming Soon to App Store</button>
         
         <div class="note">
-            <strong>Next Steps:</strong><br>
-            1. Open the GymNotes app on your device<br>
-            2. Sign in with your verified email<br>
-            3. Start logging your workouts!
+            <strong>Currently in Development</strong><br>
+            GymNotes is being built with React Native and will launch on iOS first, with Android to follow.
         </div>
     </div>
-
-    <script>
-        function openApp() {
-            // Try different app URL formats
-            const appUrls = [
-                'exp://192.168.1.100:8081',  // Development URL
-                'exp://192.168.1.100:8082',  // Alternative port
-                'gymnotes://',               // Custom scheme (for production)
-                'https://expo.dev/@your-username/gymnotes' // Expo Go URL
-            ];
-            
-            // Try each URL
-            for (const url of appUrls) {
-                try {
-                    window.location.href = url;
-                    break;
-                } catch (e) {
-                    continue;
-                }
-            }
-        }
-
-        // Auto-redirect to app if on mobile
-        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        if (isMobile) {
-            setTimeout(() => {
-                openApp();
-            }, 3000);
-        }
-    </script>
 </body>
 </html>
