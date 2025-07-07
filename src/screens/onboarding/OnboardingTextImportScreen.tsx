@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useTheme } from '../../contexts/ThemeContext';
 import { RootStackParamList, ParsedWorkoutPlan, WorkoutPlan } from '../../types';
-import { WorkoutParser } from '../../utils/workoutParser';
+import { AIWorkoutParser } from '../../services/aiParser';
 import { database } from '../../services/database';
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
@@ -36,7 +36,7 @@ export default function OnboardingTextImportScreen() {
   const [parsedPlan, setParsedPlan] = useState<ParsedWorkoutPlan | null>(null);
   const [showPreview, setShowPreview] = useState(false);
 
-  const handleParseText = () => {
+  const handleParseText = async () => {
     if (!inputText.trim()) {
       Alert.alert('No Text', 'Please paste your workout plan text to continue.');
       return;
@@ -45,25 +45,33 @@ export default function OnboardingTextImportScreen() {
     setIsLoading(true);
     
     try {
-      const parsed = WorkoutParser.parseWorkoutPlan(inputText);
+      // Parse multiple exercises from the workout plan
+      const exercises = AIWorkoutParser.parseWorkoutPlan(inputText);
       
-      if (parsed) {
-        const validation = WorkoutParser.validateParsedPlan(parsed);
+      if (exercises.length > 0) {
+        // Convert to the expected format for preview
+        const parsedPlan: ParsedWorkoutPlan = {
+          name: 'My Workout Plan',
+          description: 'Imported workout plan',
+          estimatedDifficulty: 'medium',
+          days: [{
+            name: 'Day 1',
+            exercises: exercises.map(ex => ({
+              name: ex.exercise,
+              sets: ex.sets,
+              reps: ex.reps,
+              weight: ex.weight,
+              notes: ex.notes
+            }))
+          }]
+        };
         
-        if (validation.isValid) {
-          setParsedPlan(parsed);
-          setShowPreview(true);
-        } else {
-          Alert.alert(
-            'Parsing Issues',
-            `Found some issues:\n\n${validation.errors.join('\n')}\n\nPlease check your text and try again.`
-          );
-        }
+        setParsedPlan(parsedPlan);
+        setShowPreview(true);
       } else {
-        const suggestions = WorkoutParser.generatePlanParsingSuggestions(inputText);
         Alert.alert(
           'Could Not Parse Text',
-          `Unable to parse your workout plan. Try these suggestions:\n\n${suggestions.join('\n')}`
+          'Unable to parse your workout plan. Try these suggestions:\n\n• Add exercise details with sets and reps\n• Example: "3x10 Bench Press" or "Squat 3x8 @60kg"\n• Consider adding day headers like "Day 1" or "Push Day"\n• Format: "3x10 Exercise @60kg" or "Exercise 3x10"'
         );
       }
     } catch (error) {
