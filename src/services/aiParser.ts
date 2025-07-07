@@ -81,9 +81,34 @@ export class AIWorkoutParser {
     }
   }
 
+  // Parse multiple exercises from workout plan
+  static parseWorkoutPlan(input: string): ParsedWorkout[] {
+    const lines = input.split('\n').filter(line => line.trim());
+    const exercises: ParsedWorkout[] = [];
+    
+    for (const line of lines) {
+      const result = this.parseWithRegex(line);
+      if (result.success && result.data) {
+        exercises.push(result.data);
+      }
+    }
+    
+    return exercises;
+  }
+
   // Simple regex-based parsing for common patterns
   private static parseWithRegex(input: string): AIParsingResponse {
     const inputLower = input.toLowerCase().trim();
+    
+    // Skip lines that are clearly not exercises
+    if (inputLower.includes('why?') || inputLower.includes('optional:') || 
+        inputLower.includes('rounds') || inputLower.length < 5) {
+      return {
+        success: false,
+        error: 'Not an exercise line',
+        suggestions: []
+      };
+    }
     
     // Pattern 1: "3x10 bench press @60kg"
     const pattern1 = /(\d+)x(\d+)\s+(.+?)\s*@?\s*(\d+(?:\.\d+)?)\s*(kg|lbs)?/i;
@@ -103,12 +128,29 @@ export class AIWorkoutParser {
       };
     }
 
-    // Pattern 2: "squat 100x5" or "100x5 squat"
-    const pattern2 = /(?:(\w+(?:\s+\w+)*)\s+(\d+(?:\.\d+)?)x(\d+))|(?:(\d+(?:\.\d+)?)x(\d+)\s+(\w+(?:\s+\w+)*))/i;
+    // Pattern 2: "Leg Extensions – 3x12-15" or "Seated Calf Raises – 3x15"
+    const pattern2 = /(.+?)\s*[–-]\s*(\d+)x(\d+)(?:-(\d+))?/i;
     const match2 = inputLower.match(pattern2);
     
     if (match2) {
-      const [, exercise1, weight1, reps1, weight2, reps2, exercise2] = match2;
+      const [, exercise, sets, reps1, reps2] = match2;
+      return {
+        success: true,
+        data: {
+          exercise: this.normalizeExerciseName(exercise),
+          sets: parseInt(sets),
+          reps: parseInt(reps2 || reps1), // Use higher rep if range given
+          unit: 'kg',
+        }
+      };
+    }
+
+    // Pattern 3: "squat 100x5" or "100x5 squat"
+    const pattern3 = /(?:(\w+(?:\s+\w+)*)\s+(\d+(?:\.\d+)?)x(\d+))|(?:(\d+(?:\.\d+)?)x(\d+)\s+(\w+(?:\s+\w+)*))/i;
+    const match3 = inputLower.match(pattern3);
+    
+    if (match3) {
+      const [, exercise1, weight1, reps1, weight2, reps2, exercise2] = match3;
       const exercise = exercise1 || exercise2;
       const weight = parseFloat(weight1 || weight2);
       const reps = parseInt(reps1 || reps2);
@@ -125,12 +167,12 @@ export class AIWorkoutParser {
       };
     }
 
-    // Pattern 3: "exercise name 3 sets 5 reps 120kg"
-    const pattern3 = /(.+?)\s+(\d+)\s+sets?\s+(\d+)\s+reps?\s+(\d+(?:\.\d+)?)\s*(kg|lbs)?/i;
-    const match3 = inputLower.match(pattern3);
+    // Pattern 4: "exercise name 3 sets 5 reps 120kg"
+    const pattern4 = /(.+?)\s+(\d+)\s+sets?\s+(\d+)\s+reps?\s+(\d+(?:\.\d+)?)\s*(kg|lbs)?/i;
+    const match4 = inputLower.match(pattern4);
     
-    if (match3) {
-      const [, exercise, sets, reps, weight, unit] = match3;
+    if (match4) {
+      const [, exercise, sets, reps, weight, unit] = match4;
       return {
         success: true,
         data: {
